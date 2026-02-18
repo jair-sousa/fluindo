@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { MOODS, addEntry } from "../lib/moods";
+import { MOODS } from "../lib/moods";
 import { toast } from "sonner";
+
+import { createMoodEntry } from "../services/moodService";
 
 type Props = {
   onRegistered: () => void;
@@ -9,8 +11,9 @@ type Props = {
 export default function MoodSelector({ onRegistered }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!selected) {
       toast.warning("Selecione um humor primeiro 🙂");
       return;
@@ -19,15 +22,27 @@ export default function MoodSelector({ onRegistered }: Props) {
     const mood = MOODS.find((m) => m.label === selected);
     if (!mood) return;
 
-    addEntry(mood.label, mood.emoji, note);
+    try {
+      setLoading(true);
 
-    toast.success("Sentimento registrado 🌱");
+      // ✅ Salva no Supabase
+      await createMoodEntry(mood.label, note);
 
-    setSelected(null);
-    setNote("");
-    onRegistered();
+      toast.success("Sentimento registrado 🌱");
+
+      // Reset UI
+      setSelected(null);
+      setNote("");
+
+      // 🔥 Atualiza histórico
+      onRegistered();
+    } catch (err) {
+      console.error("Erro ao registrar sentimento:", err);
+      toast.error("Erro ao salvar no Supabase 😢");
+    } finally {
+      setLoading(false);
+    }
   }
-
 
   return (
     <section className="space-y-6">
@@ -40,11 +55,13 @@ export default function MoodSelector({ onRegistered }: Props) {
             <button
               key={mood.label}
               onClick={() => setSelected(mood.label)}
+              disabled={loading}
               className={`
                 flex flex-col items-center justify-center
                 rounded-xl border p-3 sm:p-4
                 transition-all duration-200
                 hover:scale-[1.02] hover:shadow-md
+                disabled:opacity-50 disabled:cursor-not-allowed
                 ${
                   isActive
                     ? `${mood.border} ${mood.bg}`
@@ -57,7 +74,6 @@ export default function MoodSelector({ onRegistered }: Props) {
                 {mood.label}
               </span>
             </button>
-
           );
         })}
       </div>
@@ -68,25 +84,29 @@ export default function MoodSelector({ onRegistered }: Props) {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={3}
+        disabled={loading}
         className="
           w-full rounded-xl border border-gray-300
           p-3 text-sm
           focus:outline-none focus:ring-2 focus:ring-green-400
+          disabled:opacity-50
         "
       />
 
       {/* Botão */}
       <button
         onClick={handleSubmit}
+        disabled={loading}
         className="
           w-full sm:w-auto
           px-6 py-3 rounded-xl
           bg-green-600 text-white font-medium
           hover:bg-green-700 transition
+          disabled:opacity-50 disabled:cursor-not-allowed
           block mx-auto
         "
       >
-        Registrar sentimento
+        {loading ? "Salvando..." : "Registrar sentimento"}
       </button>
     </section>
   );
