@@ -11,10 +11,24 @@ export async function getMoodEntries() {
 }
 
 export async function createMoodEntry(mood: string, note?: string) {
+  // ✅ 1. pegar usuário logado
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+
+  if (!user) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  // ✅ 2. inserir com user_id
   const { error } = await supabase.from("mood_entries").insert([
     {
       mood,
       note,
+      user_id: user.id,
     },
   ]);
 
