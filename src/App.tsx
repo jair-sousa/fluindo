@@ -4,7 +4,7 @@ import MoodHistory from "./components/MoodHistory";
 import { Toaster } from "sonner";
 
 export default function App() {
-  const [, setRefresh] = useState(0);
+  const [refresh, setRefresh] = useState(0);
 
   function handleRegistered() {
     setRefresh((prev) => prev + 1);
@@ -13,6 +13,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f5] to-[#eef2ee] flex justify-center px-4">
       <Toaster richColors position="top-center" />
+
       <main className="w-full max-w-2xl py-8 space-y-10">
         {/* Header */}
         <header className="text-center space-y-2">
@@ -40,8 +41,7 @@ export default function App() {
             Seu histórico
           </h2>
 
-
-          <MoodHistory />
+          <MoodHistory refresh={refresh} />
         </section>
       </main>
     </div>
