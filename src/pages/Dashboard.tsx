@@ -1,13 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MoodSelector from "../components/MoodSelector";
 import MoodHistory from "../components/MoodHistory";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
+import { supabase } from "../services/supabaseClient";
 
 export default function Dashboard() {
   const [refresh, setRefresh] = useState(0);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
+  // ✅ Buscar usuário logado ao abrir o Dashboard
+  useEffect(() => {
+    async function loadUser() {
+      const { data } = await supabase.auth.getUser();
+      setUserEmail(data.user?.email ?? null);
+    }
+
+    loadUser();
+  }, []);
+
+  // ✅ Atualiza histórico quando registra um humor
   function handleRegistered() {
     setRefresh((prev) => prev + 1);
+  }
+
+  // ✅ Logout
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    toast.success("Você saiu da conta!");
+
+    // Redireciona para login
+    window.location.href = "/login";
   }
 
   return (
@@ -24,6 +46,23 @@ export default function Dashboard() {
           <p className="text-sm sm:text-base text-gray-600">
             Seu espaço de bem-estar emocional
           </p>
+
+          {/* ✅ Info do usuário + Logout */}
+          {userEmail && (
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <p className="text-xs text-gray-500">
+                Logado como:{" "}
+                <span className="font-semibold">{userEmail}</span>
+              </p>
+
+              <button
+                onClick={handleLogout}
+                className="text-sm text-red-600 hover:text-red-800 font-semibold"
+              >
+                Sair
+              </button>
+            </div>
+          )}
         </header>
 
         {/* Card principal */}
