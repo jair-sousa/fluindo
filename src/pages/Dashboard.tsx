@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MoodSelector from "../components/MoodSelector";
 import MoodHistory from "../components/MoodHistory";
 import { Toaster, toast } from "sonner";
@@ -7,6 +8,7 @@ import { supabase } from "../services/supabaseClient";
 export default function Dashboard() {
   const [refresh, setRefresh] = useState(0);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // ✅ Buscar usuário logado ao abrir o Dashboard
   useEffect(() => {
@@ -23,13 +25,18 @@ export default function Dashboard() {
     setRefresh((prev) => prev + 1);
   }
 
-  // ✅ Logout
+  // ✅ Logout profissional (sem reload)
   async function handleLogout() {
-    await supabase.auth.signOut();
-    toast.success("Você saiu da conta!");
+    try {
+      await supabase.auth.signOut();
+      toast.success("Você saiu da conta!");
 
-    // Redireciona para login
-    window.location.href = "/login";
+      // Redireciona usando React Router
+      navigate("/login", { replace: true });
+    } catch (error) {
+      toast.error("Erro ao sair da conta.");
+      console.error("Erro no logout:", error);
+    }
   }
 
   return (
@@ -47,7 +54,7 @@ export default function Dashboard() {
             Seu espaço de bem-estar emocional
           </p>
 
-          {/* ✅ Info do usuário + Logout */}
+          {/* Info do usuário + Logout */}
           {userEmail && (
             <div className="mt-4 flex flex-col items-center gap-2">
               <p className="text-xs text-gray-500">
@@ -57,7 +64,7 @@ export default function Dashboard() {
 
               <button
                 onClick={handleLogout}
-                className="text-sm text-red-600 hover:text-red-800 font-semibold"
+                className="text-sm text-red-600 hover:text-red-800 font-semibold transition"
               >
                 Sair
               </button>
