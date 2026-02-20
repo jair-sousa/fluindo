@@ -4,11 +4,13 @@ import MoodSelector from "../components/MoodSelector";
 import MoodHistory from "../components/MoodHistory";
 import { Toaster, toast } from "sonner";
 import { supabase } from "../services/supabaseClient";
+import { usePWAInstall } from "../hooks/usePWAInstall";
 
 export default function Dashboard() {
   const [refresh, setRefresh] = useState(0);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { canInstall, install } = usePWAInstall();
 
   // ✅ Buscar usuário logado ao abrir o Dashboard
   useEffect(() => {
@@ -20,18 +22,14 @@ export default function Dashboard() {
     loadUser();
   }, []);
 
-  // ✅ Atualiza histórico quando registra um humor
   function handleRegistered() {
     setRefresh((prev) => prev + 1);
   }
 
-  // ✅ Logout profissional (sem reload)
   async function handleLogout() {
     try {
       await supabase.auth.signOut();
       toast.success("Você saiu da conta!");
-
-      // Redireciona usando React Router
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Erro ao sair da conta.");
@@ -54,7 +52,6 @@ export default function Dashboard() {
             Seu espaço de bem-estar emocional
           </p>
 
-          {/* Info do usuário + Logout */}
           {userEmail && (
             <div className="mt-4 flex flex-col items-center gap-2">
               <p className="text-xs text-gray-500">
@@ -68,6 +65,16 @@ export default function Dashboard() {
               >
                 Sair
               </button>
+
+              {/* 🔥 Botão personalizado de instalação */}
+              {canInstall && (
+                <button
+                  onClick={install}
+                  className="mt-2 bg-[#8FAF9F] text-white px-4 py-2 rounded-xl text-sm hover:opacity-90 transition shadow-sm"
+                >
+                  Instalar aplicativo
+                </button>
+              )}
             </div>
           )}
         </header>
