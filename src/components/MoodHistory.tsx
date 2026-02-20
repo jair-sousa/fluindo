@@ -1,7 +1,40 @@
-import { getEntries, MOODS } from "../lib/moods";
+import { useEffect, useState } from "react";
+import { MOODS } from "../lib/moods";
+import { getMoodEntries } from "../services/moodService";
+import type { MoodEntry } from "../types/mood";
 
-export default function MoodHistory() {
-  const entries = getEntries();
+type Props = {
+  refresh: number;
+};
+
+export default function MoodHistory({ refresh }: Props) {
+  const [entries, setEntries] = useState<MoodEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadEntries() {
+      setLoading(true);
+
+      try {
+        const data = await getMoodEntries();
+        setEntries(data);
+      } catch (err) {
+        console.error("Erro ao carregar histórico:", err);
+      }
+
+      setLoading(false);
+    }
+
+    loadEntries();
+  }, [refresh]); // 🔥 agora refresh funciona de verdade
+
+  if (loading) {
+    return (
+      <p className="text-center text-gray-400">
+        Carregando histórico...
+      </p>
+    );
+  }
 
   if (entries.length === 0) {
     return (
@@ -14,40 +47,29 @@ export default function MoodHistory() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="space-y-4">
       {entries.map((entry) => {
-        const moodStyle = MOODS.find((m) => m.label === entry.mood);
+        const mood = MOODS.find((m) => m.label === entry.mood);
 
         return (
           <div
             key={entry.id}
-            className={`
-              rounded-2xl border p-4 shadow-sm
-              transition hover:shadow-md
-              ${moodStyle?.bg}
-              ${moodStyle?.border}
-            `}
+            className={`p-4 rounded-xl border shadow-sm ${
+              mood?.border ?? "border-gray-200"
+            } ${mood?.bg ?? "bg-white"}`}
           >
-            {/* Header */}
             <div className="flex items-center justify-between">
-              <h3
-                className={`text-lg font-semibold flex items-center gap-2 ${moodStyle?.text}`}
-              >
-                <span className="text-2xl">{entry.emoji}</span>
-                {entry.emoji}
-              </h3>
+              <span className="text-lg font-semibold flex items-center gap-2">
+                {mood?.emoji} {entry.mood}
+              </span>
 
               <span className="text-xs text-gray-400">
-                {new Date(entry.createdAt).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "short",
-                })}
+                {new Date(entry.created_at).toLocaleString()}
               </span>
             </div>
 
-            {/* Note */}
             {entry.note && (
-              <p className="mt-2 text-gray-700 leading-relaxed">
+              <p className="mt-2 text-gray-700 text-sm">
                 {entry.note}
               </p>
             )}
